@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/csv"
-	"flag"
+	//"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -16,28 +16,26 @@ type question struct{
 	answer string
 }
 
-
+// Function that reads questions from CSV file and stores them as a randomised list of question type structs
 func loadQuestions(fileName string) []question{
 
 	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("Error: File not found.")
-		//panic(err)
 	}
-	//defer file.Close();
 
 	csvContents, err := csv.NewReader(file).ReadAll()
 	if err != nil {
 		fmt.Println("Error: Could not read questions.")
-		//panic(err)
 	}
 
 	var quiz []question
 
 
 	for _, line := range csvContents {
+		unformattedQuestion := line[0]
 		qa := question{
-			question: line[0],
+			question: strings.ReplaceAll(unformattedQuestion, `\n`, "\n"),	// Go doesn't parse "\n" as a newline character
 			answer: line[1],
 		}
 		quiz = append(quiz, qa)
@@ -57,36 +55,35 @@ func loadQuestions(fileName string) []question{
 
 func main(){
 
-	//fmt.Println("Welcome to the CSV Quiz Game designed in Go Lang");
-	fileName := flag.String("questions","problems.csv","The CSV file from where questions would be read.")
-	timeLimit := flag.Int("time", 30, "Set a time limit for the quiz")
-	flag.Parse()
+	var fileName = "problems.csv"
+	var timeLimit = 20
+	//flag.Parse()
 
 	var quiz []question
 	var score int
 	score = 0
-	quiz = loadQuestions(*fileName)
+	quiz = loadQuestions(fileName)
 	var answer string
 
-	fmt.Printf("Press Enter to start the quiz")
+	fmt.Printf("Welcome to the 20 second quiz. Use the number keys 1, 2, 3 to answer. Press Enter to begin")
 	fmt.Scanln()
-	timer := time.NewTimer(time.Duration(*timeLimit)*time.Second)
+	timer := time.NewTimer(time.Duration(timeLimit)*time.Second)
 	defer timer.Stop()
 
 	go func() {
 		<-timer.C
-		fmt.Printf("\nTime's up. You answered %d questions correctly out of a total of %d questions.\n",score, len(quiz))
+		fmt.Printf("\nTime's up. Your score: %d out of %d\n",score, len(quiz))
 		os.Exit(1)
 		}()
 
 	for i, questions := range quiz {
-		fmt.Printf("Question %d :- %s? ",i+1,questions.question)
+		fmt.Printf("\nQuestion %d: %s ",i+1,questions.question)
 		fmt.Scan(&answer)
 		if strings.ToLower(strings.Trim(answer," ")) == strings.ToLower(strings.Trim(questions.answer, " ")){
 			score++;
 		}
 	}
 
-	fmt.Printf("You answered %d questions correctly out of a total of %d questions.\n",score, len(quiz))
+	fmt.Printf("End of quiz. Your score: %d out of %d\n",score, len(quiz))
 
 }
